@@ -5,6 +5,7 @@
 package Assignment6View;
 
 import Assignment6Model.*;
+import Assignment6Controller.*;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public class CustomerDetail extends javax.swing.JFrame {
 
     private final String firstName;
     private final String lastName;
+    private BankCustomer customer;
 
     public CustomerDetail(String firstName, String lastName) {
         initComponents();
@@ -36,6 +38,7 @@ public class CustomerDetail extends javax.swing.JFrame {
         this.lastName = lastName;
         CustomerJList = new javax.swing.JList<>();
         displayCustomerDetails();
+//        displayCustomerAccounts();
     }
 
     private javax.swing.JList<String> CustomerJList;
@@ -62,10 +65,7 @@ public class CustomerDetail extends javax.swing.JFrame {
                 String phone = resultSet.getString("phone");
                 String birthday = resultSet.getString("birthday");
 
-                // Now that we have the customer's ID, let's fetch their associated accounts
-                List<BankAccount> accounts = fetchCustomerAccounts(customerId);
-
-                // Create a BankCustomer object with fetched details and associated accounts
+                // Create a BankCustomer object with fetched details
                 customer = new BankCustomer(customerId, firstName, lastName, email, phone, birthday);
             } else {
                 System.out.println("No customer found with the provided first name and last name.");
@@ -77,11 +77,16 @@ public class CustomerDetail extends javax.swing.JFrame {
         return new Object[]{customer, customerId};
     }
 
+    void print(String string){
+        System.out.println(string);
+    }
+
     private void fetchAndDisplayAddress(int customerId) {
         String query = "SELECT * FROM customeraddress WHERE custid = ?";
         try (Connection connection = DriverManager.getConnection(DB_URL + DB_NAME, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, customerId);
+            System.out.println("in fetchAndDisplayAddress " + customerId);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
@@ -100,7 +105,7 @@ public class CustomerDetail extends javax.swing.JFrame {
     private void displayCustomerDetails() {
         // Fetch customer details from the database based on the first name and last name
         Object[] customerDetails = fetchCustomerDetails(firstName, lastName);
-        BankCustomer customer = (BankCustomer) customerDetails[0];
+        customer = (BankCustomer) customerDetails[0];
         int customerId = (int) customerDetails[1];
 
         // If customer is null, return
@@ -113,34 +118,39 @@ public class CustomerDetail extends javax.swing.JFrame {
         jTextField2.setText(customer.getLastName());
         jTextField3.setText(customer.getEmail());
         jTextField4.setText(customer.getPhone());
-        System.out.println(customer.getId());
-        fetchAndDisplayAddress(customerId);
+        System.out.println("Customer ID before passing to displayCustomerAccounts: " + customerId); // Debug
+        System.out.println(customerId);
+        fetchAndDisplayAddress(customerId); // Pass the obtained customer ID to fetch the address
 
-        // Display customer's accounts
-        displayCustomerAccounts(customer.getAccounts(), CustomerJList);
+        displayCustomerAccounts(customerId);
     }
 
     private BankCustomer BankCusInst;
 
-    private void displayCustomerAccounts(List<BankAccount> accounts, javax.swing.JList<String> accountList) {
-        // Check if the accounts list is null or empty
-        if (accounts == null || accounts.isEmpty()) {
-            // If no accounts are found, display a message
-            accountList.setListData(new String[]{"No accounts found"});
+    private void displayCustomerAccounts(int customerId) {
+        // Fetch customer accounts from the database based on the customer ID
+        List<BankAccount> accounts = fetchCustomerAccounts(customerId);
+
+        // If no accounts are found, display a message
+        if (accounts.isEmpty()) {
+            System.out.println("Customer ID in displayCustomer...: " + customerId);
+
+            jList1.setListData(new String[]{"No accounts found"});
         } else {
             // Convert the list of BankAccount objects to an array of strings for display
             String[] accountDetails = accounts.stream()
                     .map(account -> "Account ID: " + account.getAccountNum() + ", Balance: $" + account.getBalance())
                     .toArray(String[]::new);
 
-            // Set the array of account details as the data for the accountList JList component
-            accountList.setListData(accountDetails);
+            // Set the array of account details as the data for the JList component
+            jList1.setListData(accountDetails);
         }
     }
 
     private List<BankAccount> fetchCustomerAccounts(int customerId) {
         List<BankAccount> accounts = new ArrayList<>();
         String query = "SELECT * FROM bankaccount WHERE cust_id = ?";
+        System.out.println("SQL Query: " + query); // Debug statement for SQL query
 
         try (Connection connection = DriverManager.getConnection(DB_URL + DB_NAME, DB_USER, DB_PASSWORD);
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -148,7 +158,7 @@ public class CustomerDetail extends javax.swing.JFrame {
             ResultSet resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
-                int accountId = resultSet.getInt("cust_id");
+                int accountId = resultSet.getInt("acct_num");
                 double balance = resultSet.getDouble("balance");
                 String accountType = resultSet.getString("acct_type");
 
@@ -161,6 +171,14 @@ public class CustomerDetail extends javax.swing.JFrame {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        System.out.println("Customer ID in fetchCustomerAccounts: " + customerId);
+
+        // Debug statement for retrieved accounts
+        System.out.println("Retrieved Accounts: " + accounts);
+
+        // Debug statement for number of retrieved accounts
+        System.out.println("Number of Retrieved Accounts: " + accounts.size());
 
         return accounts;
     }
