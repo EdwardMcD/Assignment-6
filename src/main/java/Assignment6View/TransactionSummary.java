@@ -4,17 +4,64 @@
  */
 package Assignment6View;
 
+import Assignment6Model.*;
+import Assignment6Controller.*;
+
+import java.sql.*;
+import javax.swing.*;
+
 /**
  *
  * @author karunmehta
  */
 public class TransactionSummary extends javax.swing.JFrame {
 
+    private int accountID;
+
+    // Establish a connection to the database
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/";
+    private static final String DB_NAME = "CS413";
+    private static final String DB_USER = "root";
+    private static final String DB_PASSWORD = "219Med@78";
+
     /**
      * Creates new form TransactionSummary
      */
-    public TransactionSummary() {
+    public TransactionSummary(int accountID) {
         initComponents();
+        this.accountID = accountID;
+        displayTransactions();
+        populateAccountInfo();
+    }
+
+    private void populateAccountInfo() {
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/CS413", "root", "219Med@78");
+
+            String sql = "SELECT ba.acct_num, ba.cust_id, c.first_name, c.last_name FROM bankaccount ba JOIN bankcustomer c ON ba.cust_id = c.id WHERE ba.acct_num = ?";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, accountID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                int accountNum = resultSet.getInt("acct_num");
+                int custID = resultSet.getInt("cust_id");
+                String firstName = resultSet.getString("first_name");
+                String lastName = resultSet.getString("last_name");
+                String customerName = firstName + " " + lastName;
+
+                jTextField1.setText(Integer.toString(accountNum));
+                jTextField2.setText(customerName);
+            }
+
+            resultSet.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error fetching account information: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -38,7 +85,7 @@ public class TransactionSummary extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jLabel1.setText("Accout ID:");
+        jLabel1.setText("Account ID:");
 
         jList1.setModel(new javax.swing.AbstractListModel<String>() {
             String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
@@ -111,8 +158,46 @@ public class TransactionSummary extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     /**
-     * @param args the command line arguments
+//     * @param args the command line arguments
      */
+
+    private void displayTransactions() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/CS413", "root", "219Med@78");
+
+            String sql = "SELECT create_date, tran_type, amount, summary FROM accounttransaction WHERE acct_id = ?";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setInt(1, accountID);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                String createDate = resultSet.getString("create_date");
+                String tranType = resultSet.getString("tran_type");
+                double amount = resultSet.getDouble("amount");
+                String summary = resultSet.getString("summary");
+
+                model.addElement(createDate + " | " + tranType + " | " + amount + " | " + summary);
+            }
+
+            jList1.setModel(model);
+
+            resultSet.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error fetching transactions: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
+        // Close the TransactionSummary frame
+        this.dispose();
+    }
+
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -140,7 +225,7 @@ public class TransactionSummary extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TransactionSummary().setVisible(true);
+                new TransactionSummary(1).setVisible(true);
             }
         });
     }
