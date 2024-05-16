@@ -468,9 +468,66 @@ public class CustomerDetail extends javax.swing.JFrame {
         }
     }
 
+    private BankAccount fetchAccountFromDatabase(int accountNum) {
+        BankAccount account = null;
+        String query = "SELECT * FROM bankaccount WHERE acct_num = ?";
+        try (Connection connection = DriverManager.getConnection(DB_URL + DB_NAME, DB_USER, DB_PASSWORD);
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, accountNum);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                // Extract account details from the result set
+                int customerId = resultSet.getInt("cust_id");
+                double balance = resultSet.getDouble("balance");
+                String accountType = resultSet.getString("acct_type");
+
+                // Create a BankAccount object with fetched details
+                account = new BankAccount(accountNum, customerId, balance, accountType);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return account;
+    }
+
+    private BankAccount getSelectedAccountFromList() {
+        // Get the index of the selected item in the JList
+        int selectedIndex = jList1.getSelectedIndex();
+
+        // Check if an item is selected
+        if (selectedIndex != -1) {
+            // Get the selected value (which is a string representation of the account details)
+            String selectedValue = jList1.getSelectedValue();
+
+            // Extract the account number from the selected value
+            String[] parts = selectedValue.split(":");
+            if (parts.length >= 2) {
+                String accountNumString = parts[1].trim().split(",")[0]; // Extract account number
+                int accountNum = Integer.parseInt(accountNumString);
+
+                return fetchAccountFromDatabase(accountNum);
+            }
+        }
+
+        // Return null if no item is selected or if the selected item format is unexpected
+        return null;
+    }
+
     private void actDetailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_actDetailActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_actDetailActionPerformed
+        // Get the selected account from the list
+        BankAccount selectedAccount = getSelectedAccountFromList();
+
+        // Open the AccountDetail frame and pass the account number
+        if (selectedAccount != null) {
+            int accountNumber = selectedAccount.getAccountNum();
+            AccountDetail accountDetailFrame = new AccountDetail(accountNumber);
+            accountDetailFrame.setVisible(true);
+        } else {
+            // Handle the case where no account is selected
+            JOptionPane.showMessageDialog(this, "Error: Please select an account.", "No Account Selected", JOptionPane.WARNING_MESSAGE);
+        }
+    }
 
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
         // TODO add your handling code here:
