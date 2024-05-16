@@ -151,8 +151,6 @@ public class CustomerSearch extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void searchActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
-
         // Get the search criteria from the user
         String lastName = this.lastName.getText();
         String firstName = this.firstName.getText();

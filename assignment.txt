@@ -78,17 +78,23 @@ should do the following:
 3. Once on the Main Menu page, you must test your Banking Application in the
 following individual steps, which will then also be used by the user/grader to
 test your application code
+
+
+
 Testing Step1 [10 pts]
 - Click on “Show All Customers” button. This should open the CustomerList
 frame with all customers currently in the DB
+
 Testing Step2 [10 pts]
 - Select a customer from the list and click “Show Detail” button. This should
 open the CustomerDetail frame with all attributes of the selected customer
+
 Testing Step3 [10 pts]
 - Update a customer attribute in a field and click ‘Update’. This should
 update the customer detail in the database and show MessageBox with the
 message “Customer Detail Updated Successfully..”
 - Click ‘Close Button’
+
 Testing Step4 [10 pts]
 - Click “Show Account” button on the CustomerList frame
 - This should open the BankAccountList frame showing all accounts related
